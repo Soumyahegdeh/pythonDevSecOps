@@ -1,31 +1,38 @@
-# pull official base image
+# ---------- build stage ----------
+FROM python:3.11-slim-bookworm as builder
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y gcc
+
+COPY requirements.txt .
+
+RUN pip install --upgrade pip && \
+    pip install --prefix=/install -r requirements.txt
+
+
+# ---------- runtime stage ----------
 FROM python:3.11-slim-bookworm
 
+WORKDIR /app
 
-# set work directory
-WORKDIR /usr/src/app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# install system dependencies
 RUN apt-get update && apt-get install -y netcat-openbsd
 
+COPY --from=builder /install /usr/local
 
-# install dependencies
-RUN pip install --upgrade pip
-COPY ./requirements.txt .
-RUN pip install -r requirements.txt
-
-# copy entrypoint.sh
-COPY ./entrypoint.sh .
-RUN sed -i 's/\r$//g' /usr/src/app/entrypoint.sh
-RUN chmod +x /usr/src/app/entrypoint.sh
-
-# copy project
 COPY . .
 
-# run entrypoint.sh
-ENTRYPOINT ["sh", "/usr/src/app/entrypoint.sh"]
+# make entrypoint executable
+COPY entrypoint.prod.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
+ENTRYPOINT ["/entrypoint.sh"]
+
+# 👇 IMPORTANT: always start server here
+CMD ["gunicorn", "HELLO_DIJANGO.wsgi:application", "--bind", "0.0.0.0:8000"]
