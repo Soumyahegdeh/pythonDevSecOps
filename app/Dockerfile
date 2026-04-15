@@ -35,4 +35,4 @@ RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
 # 👇 IMPORTANT: always start server here
-CMD ["gunicorn", "HELLO_DIJANGO.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "hello_django.wsgi:application", "--bind", "0.0.0.0:8000"]
