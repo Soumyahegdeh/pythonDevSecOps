@@ -124,7 +124,7 @@ jobs:
          push: true
          tags: |
             soumyahe/pyapp:${{ github.run_number }}
-            soumyahe/pyapp:latest
+          #  soumyahe/pyapp:latest
          cache-from: type=gha
          cache-to: type=gha,mode=max
 
@@ -148,7 +148,7 @@ jobs:
          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Pull Image
-        run: docker pull soumyahe/pyapp:latest
+        run: docker pull soumyahe/pyapp:${{ github.run_number }}
 
       - name: Create Docker Network
         run: docker network create zap-net || true
@@ -160,7 +160,7 @@ jobs:
             -e SECRET_KEY="dev-secret-key" \
             -e DEBUG=1 \
             -e DJANGO_ALLOWED_HOSTS="*" \
-            soumyahe/pyapp:latest
+            soumyahe/pyapp:${{ github.run_number }}
 
       
       - name: Wait for App 
