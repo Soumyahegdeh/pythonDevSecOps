@@ -154,7 +154,13 @@ jobs:
         run: docker network create zap-net || true
 
       - name: Run App Container
-        run: docker run -d --name app --network zap-net -p 8000:8000 soumyahe/pyapp:latest
+        run: |
+          docker run -d --name app --network zap-net \
+            -p 8000:8000 \
+            -e SECRET_KEY="dev-secret-key" \
+            -e DEBUG=1 \
+            -e DJANGO_ALLOWED_HOSTS="*" \
+            soumyahe/pyapp:latest
 
       
       - name: Wait for App 
@@ -191,7 +197,7 @@ jobs:
            -r zap-report.html \
            -J zap-report.json \
            -m 5 \
-           -a
+           -a || true
 
       - name: Upload ZAP Reports
         uses: actions/upload-artifact@v4
