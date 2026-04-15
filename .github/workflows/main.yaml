@@ -176,7 +176,7 @@ jobs:
 
           docker run --rm \
             -v $(pwd)/zap-reports:/zap/wrk/:rw \
-            owasp/zap2docker-weekly \
+            ghcr.io/zaproxy/zaproxy:stable\
             zap-full-scan.py \
             -t http://localhost:8000 \
             -r zap-report.html \
