@@ -151,16 +151,17 @@ jobs:
         run: docker pull soumyahe/pyapp:latest
 
       - name: Create Docker Network
-        run: docker network create zap-net
+        run: docker network create zap-net || true
 
       - name: Run App Container
         run: docker run -d --name app --network zap-net -p 8000:8000 soumyahe/pyapp:latest
 
+      
       - name: Wait for App 
         run: |
           echo "Waiting for app to be up..."
           for i in {1..20}; do
-            if curl -s http://localhost:8000/ > /dev/null; then
+            if curl -s http://127.0.0.1:8000/ > /dev/null; then
               echo "App is up."
               exit 0
             fi
@@ -172,22 +173,33 @@ jobs:
           docker logs app
           exit 1
           
+      - name: Prepare ZAP reports folder
+        run: |
+         mkdir -p zap-reports
+         chmod 777 zap-reports
+
+
 
       - name: Setup and Run OWASP ZAP
         run: |
-          mkdir -p zap-reports
+         docker run --rm \
+           --network zap-net \
+           -v "$(pwd)/zap-reports:/zap/wrk/:rw" \
+           ghcr.io/zaproxy/zaproxy:stable \
+           zap-full-scan.py \
+           -t http://app:8000 \
+           -r zap-report.html \
+           -J zap-report.json \
+           -m 5 \
+           -a
 
-          docker run --rm \
-            --network zap-net \
-            -v $(pwd)/zap-reports:/zap/wrk/:rw \
-            ghcr.io/zaproxy/zaproxy:stable \
-            zap-full-scan.py \
-            -t http://app:8000 \
-            -r zap-report.html \
-            -J zap-report.json \
-            -m 5 \
-            -a
-        
+      - name: Upload ZAP Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+         name: zap-reports
+         path: zap-reports  
+            
       # Cleanup container (always runs)
       - name: Cleanup Docker Container
         if: always()
