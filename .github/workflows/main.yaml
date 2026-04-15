@@ -122,7 +122,9 @@ jobs:
          context: app
          file: app/Dockerfile
          push: true
-         tags: soumyahe/pyapp:latest
+         tags: |
+            soumyahe/pyapp:${{ github.run_number }}
+            soumyahe/pyapp:latest
          cache-from: type=gha
          cache-to: type=gha,mode=max
 
@@ -132,42 +134,54 @@ jobs:
     name: DAST with OWASP ZAP
     runs-on: ubuntu-latest
     needs: [sca_safety, sast_bandit, secret_detection, docker_build]
-    services:
-      app:
-        image: soumyahe/pyapp:latest  # Update with your app's Docker image
-        ports:
-          - 8000:8000  # Update with your app's port
-        options: 
-            --health-cmd "curl -f http://localhost:8000/ || exit 1" 
-            --health-interval 10s 
-            --health-timeout 5s 
-            --health-retries 5
+
     
     
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Wait for App Service
+      - name: Pull Image
+        run: docker pull soumyahe/pyapp:${{ github.run_number }}
+
+      - name: Run App Container
+        run: docker run -d --name app -p 8000:8000 soumyahe/pyapp:${{ github.run_number }}
+
+      - name: Wait for App 
         run: |
-          echo "Waiting for app service to be up..."
-          for i in {1..10}; do
+          echo "Waiting for app to be up..."
+          for i in {1..20}; do
             if curl -s http://localhost:8000/ > /dev/null; then
-              echo "App service is up."
+              echo "App is up."
               exit 0
             fi
-            echo "Attempt $i: App service not up yet."
+            echo "Attempt $i: App not up yet."
             sleep 5  
             
           done
+          echo "App failed to start"
+          docker logs app
           exit 1
           
 
       - name: Setup and Run OWASP ZAP
-        uses: zaproxy/action-baseline@v0.12.0
-        with:
-          target: 'http://app:8000' 
-          cmd_options: '-a -m 5'
-          artifact_name: zap_scan
-          allow_issue_writing: true 
-          fail_on_threshold: true
+        run: |
+          mkdir -p zap-reports
+
+          docker run --rm \
+            --network host \
+            -v $(pwd)/zap-reports:/zap/wrk/:rw \
+            owasp/zap2docker-stable \
+            zap-full-scan.py \
+            -t http://localhost:8000 \
+            -r zap-report.html \
+            -J zap-report.json \
+            -m 5 \
+            -a
+        
+      # Cleanup container (always runs)
+      - name: Cleanup Docker Container
+        if: always()
+        run: |
+          docker stop app || true
+          docker rm app || true
