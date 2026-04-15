@@ -1,0 +1,47 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+    # Run SCA and Safety checks
+  sca_safety:
+    name: SCA and Safety
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python Environment
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install Dependencies and safety
+        run: |
+            if [ -f "app/requirements.txt" ]; then
+              python -m pip install --upgrade pip
+              pip install safety
+              pip install -r app/requirements.txt
+            else
+              echo "No requirements.txt found, skipping dependency installation."
+            fi
+     
+      
+      - name: Run Safety Check
+        run: |
+            if [ -f "app/requirements.txt" ]; then
+                safety check --file=app/requirements.txt --json > safety-report.json || echo "Safety scan completed with issues"
+            else
+               echo "{}" > safety-report.json
+            fi
+
+      - name: Upload Safety Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-scan-report
+          path: safety-report.json
+        
