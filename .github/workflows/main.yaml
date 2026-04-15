@@ -122,7 +122,7 @@ jobs:
          context: app
          file: app/Dockerfile
          push: true
-         tags: soumyahe/pyapp:${{ github.run_number }}
+         tags: soumyahe/pyapp:latest
          cache-from: type=gha
          cache-to: type=gha,mode=max
 
@@ -134,7 +134,7 @@ jobs:
     needs: [sca_safety, sast_bandit, secret_detection, docker_build]
     services:
       app:
-        image: soumyahe/pyapp:${{ github.run_number }}  # Update with your app's Docker image
+        image: soumyahe/pyapp:latest  # Update with your app's Docker image
         ports:
           - 8000:8000  # Update with your app's port
         options: 
