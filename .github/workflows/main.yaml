@@ -44,6 +44,8 @@ jobs:
         with:
           name: safety-scan-report
           path: safety-report.json
+
+    # Run SAST with Bandit       
   sast_bandit:
     name: SAST with Bandit
     runs-on: ubuntu-latest
@@ -70,3 +72,25 @@ jobs:
         with:
           name: bandit-scan-report
           path: bandit-report.json   
+   
+  
+  # secret detection using gitleaks
+  secret_detection:
+    name: Secret Detection with Gitleaks
+    runs-on: ubuntu-latest
+   
+    permissions:
+     contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for accurate secret detection
+
+      - name: Scan for secrets with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          #GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        
