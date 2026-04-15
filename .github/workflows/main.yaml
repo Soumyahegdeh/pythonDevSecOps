@@ -144,13 +144,16 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Pull Docker Image
+        run: docker pull soumyahe/pyapp:${{ github.run_number }}
+
       - name: Scan Docker Image with Trivy
         uses: aquasecurity/trivy-action@v0.4.0
         with:
           image-ref: soumyahe/pyapp:${{ github.run_number }}
           format: 'json'
           output: 'trivy-report.json'
-          severity-threshold: 'HIGH'
+          severity: 'HIGH'
           ignore-unfixed: true
     
 
