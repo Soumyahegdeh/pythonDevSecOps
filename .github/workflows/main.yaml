@@ -150,8 +150,11 @@ jobs:
       - name: Pull Image
         run: docker pull soumyahe/pyapp:latest
 
+      - name: Create Docker Network
+        run: docker network create zap-net
+
       - name: Run App Container
-        run: docker run -d --name app -p 8000:8000 soumyahe/pyapp:latest
+        run: docker run -d --name app --network zap-net -p 8000:8000 soumyahe/pyapp:latest
 
       - name: Wait for App 
         run: |
@@ -175,10 +178,11 @@ jobs:
           mkdir -p zap-reports
 
           docker run --rm \
+            --network zap-net \
             -v $(pwd)/zap-reports:/zap/wrk/:rw \
-            ghcr.io/zaproxy/zaproxy:stable\
+            ghcr.io/zaproxy/zaproxy:stable \
             zap-full-scan.py \
-            -t http://localhost:8000 \
+            -t http://app:8000 \
             -r zap-report.html \
             -J zap-report.json \
             -m 5 \
