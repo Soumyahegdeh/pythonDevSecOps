@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      imagePullSecrets:
+          - name: regcred
+      containers:
+        - name: django
+          image: soumyahe/pyapp:28
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DEBUG
+              value: "1"
+
+            - name: SQL_ENGINE
+              value: django.db.backends.postgresql
+            - name: SQL_DATABASE
+              value: hello_django_dev
+            - name: SQL_USER
+              value: hello_django
+            - name: SQL_PASSWORD
+              value: hello_django
+            - name: SQL_HOST
+              value: db
+            - name: SQL_PORT
+              value: "5432"
