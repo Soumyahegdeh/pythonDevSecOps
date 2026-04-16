@@ -6,6 +6,9 @@ on:
     types:
       - completed
 
+permissions:
+  contents: write # Allow workflow to push changes to the repository
+
 jobs:
   update-k8s-manifest:
     runs-on: ubuntu-latest
